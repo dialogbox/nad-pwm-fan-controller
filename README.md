@@ -42,6 +42,14 @@ nad-pwm-fan-controller/
 
 ---
 
+## Circuit Schematic
+
+The wiring layout for connecting your ESP8266 board to the 4-pin PWM fan is documented in the [docs/](file:///home/dialogbox/works/nad-pwm-fan-controller/docs) directory:
+
+![Circuit Schematic](docs/NAD%20Smart%20Fan%20Controller_schem.svg)
+
+---
+
 ## WiFi Configuration & Setup Portal
 
 The controller does not hardcode WiFi credentials. Instead, it securely provisions itself dynamically:
