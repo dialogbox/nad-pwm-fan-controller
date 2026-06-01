@@ -2,6 +2,7 @@
 #include "storage.h"
 #include "fan.h"
 #include "bluos.h"
+#include <WiFiManager.h>
 
 // Forward Declarations of Web Handlers
 void handleRoot();
@@ -10,6 +11,7 @@ void handleTogglePower();
 void handleSaveEndpoint();
 void handleStatus();
 void handleToggleTemp();
+void handleResetWiFi();
 
 void initWebServer() {
   server.on("/", handleRoot);
@@ -17,6 +19,7 @@ void initWebServer() {
   server.on("/toggle", handleTogglePower);
   server.on("/save", handleSaveEndpoint);
   server.on("/toggle-temp", handleToggleTemp);
+  server.on("/reset-wifi", handleResetWiFi);
   server.on("/status", handleStatus);
   server.begin();
   Serial.println("[Web] HTTP Web Server initialized");
@@ -74,6 +77,7 @@ void handleRoot() {
       }
     }
     .card {
+      position: relative;
       background: var(--card-bg);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -325,6 +329,14 @@ void handleRoot() {
       background: #0d9488;
       box-shadow: 0 0 12px rgba(20, 184, 166, 0.4);
     }
+    .save-btn.reset {
+      background: #ef4444;
+      color: #f8fafc;
+    }
+    .save-btn.reset:hover {
+      background: #dc2626;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    }
     .bluos-status {
       margin-top: 10px;
       font-size: 11px;
@@ -368,11 +380,11 @@ void handleRoot() {
       font-weight: 800;
     }
     
-    /* Switch Toggle Styling */
+    /* Switch Toggle Styling (Vibrant Emerald Green) */
     .switch input:checked + .slider {
-      background-color: var(--accent);
-      box-shadow: 0 0 10px var(--accent-glow);
-      border-color: rgba(20, 184, 166, 0.3);
+      background-color: var(--power-on);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+      border-color: rgba(16, 185, 129, 0.5);
     }
     .switch .slider::before {
       position: absolute;
@@ -388,6 +400,18 @@ void handleRoot() {
     .switch input:checked + .slider::before {
       transform: translateX(20px);
       background-color: #1e293b;
+    }
+    
+    /* Settings Gear Micro-animation */
+    button:hover svg.feather-settings {
+      transform: rotate(45deg);
+      color: var(--accent) !important;
+    }
+    
+    /* Modal keyframe entry */
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
   </style>
   <script>
@@ -445,6 +469,42 @@ void handleRoot() {
         .then(() => {
           checkStatus();
         });
+    }
+
+    function resetWiFi() {
+      const confirmStr = prompt('To confirm resetting all WiFi credentials and entering Setup Portal mode, please type "RESET":');
+      if (confirmStr === 'RESET') {
+        fetch('/reset-wifi')
+          .then(r => r.text())
+          .then(res => {
+            alert('WiFi configurations cleared! The device is now launching the captive portal "Smart-Fan-Setup". Please connect your phone/computer to configure your WiFi.');
+            window.location.reload();
+          });
+      } else if (confirmStr !== null) {
+        alert('Confirmation failed. Reset canceled.');
+      }
+    }
+
+    function openSettings() {
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function resetWiFi() {
+      const confirmStr = prompt('To confirm resetting all WiFi credentials and entering Setup Portal mode, please type "RESET":');
+      if (confirmStr === 'RESET') {
+        fetch('/reset-wifi')
+          .then(r => r.text())
+          .then(res => {
+            alert('WiFi configurations cleared! The device is now launching the captive portal "Smart-Fan-Setup". Please connect your phone/computer to configure your WiFi.');
+            window.location.reload();
+          });
+      } else if (confirmStr !== null) {
+        alert('Confirmation failed. Reset canceled.');
+      }
     }
 
     function checkStatus() {
@@ -536,7 +596,11 @@ void handleRoot() {
             }
           }
 
-          // Update endpoint input
+          // Update endpoint display text and input value
+          const epDisplay = document.getElementById('endpoint-display');
+          if (epDisplay) {
+            epDisplay.innerText = data.endpoint || 'Not Set';
+          }
           const epInput = document.getElementById('endpoint-input');
           if (epInput && document.activeElement !== epInput) {
             epInput.value = data.endpoint;
@@ -712,6 +776,13 @@ void handleRoot() {
 <body>
   <div class='app-container'>
     <div class='card'>
+      <!-- Settings Gear Button -->
+      <button onclick='openSettings()' style='position: absolute; top: 20px; right: 20px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); transition: color 0.3s; outline: none; padding: 5px; display: flex; align-items: center; justify-content: center;'>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings" viewBox="0 0 24 24" style="transition: transform 0.5s ease; color: var(--text-muted);">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
       <h1>Fan Control</h1>
       <div class='subtitle'>Smart Ramping System</div>
       
@@ -756,9 +827,9 @@ void handleRoot() {
       <!-- Settings Card -->
       <div class='settings-section'>
         <div class='settings-title'>BluOS Integration</div>
-        <div class='input-wrapper'>
-          <input type='text' id='endpoint-input' class='endpoint-input' value='' placeholder='192.168.0.18:23'>
-          <button class='save-btn' onclick='saveEndpoint()'>SAVE</button>
+        <div style='font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;'>
+          <span style='color: var(--text-muted); font-size: 12px;'>Endpoint:</span>
+          <span id='endpoint-display' style='color: var(--accent); font-family: monospace; font-size: 14px;'>192.168.0.18:23</span>
         </div>
         <div class='bluos-status'>
           <span id='bluos-dot' class='status-dot'></span>
@@ -800,6 +871,31 @@ void handleRoot() {
           <span id='temp-offline-reason' style='font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;'>BluOS Device Standby</span>
         </div>
         <canvas id='tempChart' style='width: 100%; height: 180px;'></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Window Overlay -->
+  <div id='settings-modal' style='display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:100; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;'>
+    <div class='card' style='position:relative; width:100%; max-width:400px; padding:35px 25px; animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);'>
+      <!-- Close Button -->
+      <button onclick='closeSettings()' style='position: absolute; top: 15px; right: 20px; background: transparent; border: none; cursor: pointer; color: var(--text-muted); font-size: 20px; font-weight: 300; outline: none; padding: 5px;'>✕</button>
+      
+      <div class='settings-title' style='font-size: 16px; margin-bottom: 25px; font-weight: 800; text-align: left; background: linear-gradient(to right, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>System Settings</div>
+      
+      <!-- BluOS Integration Section -->
+      <div style='text-align: left; margin-bottom: 25px;'>
+        <div class='settings-title' style='font-size: 11px;'>BluOS Streamer Connection</div>
+        <div class='input-wrapper' style='display: flex; gap: 8px; margin-top: 10px;'>
+          <input type='text' id='endpoint-input' class='endpoint-input' value='' placeholder='192.168.0.18:23'>
+          <button class='save-btn' onclick='saveEndpoint()'>SAVE</button>
+        </div>
+      </div>
+      
+      <!-- WiFi Reset Section -->
+      <div style='text-align: left; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;'>
+        <div class='settings-title' style='font-size: 11px; margin-bottom: 10px;'>WiFi Configuration</div>
+        <button class='save-btn reset' onclick='resetWiFi()' style='width: 100%; height: 38px;'>RESET WIFI CONFIG</button>
       </div>
     </div>
   </div>
@@ -906,6 +1002,17 @@ void handleToggleTemp() {
     server.sendHeader("Connection", "close");
     server.send(400, "text/plain", "Missing state");
   }
+}
+
+void handleResetWiFi() {
+  Serial.println("[Web] GET /reset-wifi (WiFi Configuration Reset requested!)");
+  server.sendHeader("Connection", "close");
+  server.send(200, "text/plain", "OK");
+  delay(1000);
+  
+  WiFiManager wm;
+  wm.resetSettings();
+  ESP.restart();
 }
 
 void handleStatus() {
