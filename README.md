@@ -47,7 +47,7 @@ nad-pwm-fan-controller/
 The wiring layout for connecting your ESP8266 board to the 4-pin PWM fan is documented in the [docs/](file:///home/dialogbox/works/nad-pwm-fan-controller/docs) directory:
 
 <p align="center">
-  <img src="docs/NAD%20Smart%20Fan%20Controller_schem.svg" alt="Circuit Schematic" width="640" style="background-color: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);" />
+  <img src="docs/schematic.svg" alt="Circuit Schematic" width="640" />
 </p>
 
 ---
